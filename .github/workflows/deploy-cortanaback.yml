@@ -1,0 +1,143 @@
+name: Deploy CortanaBack Static Web App
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AZURE_RESOURCE_GROUP: cortanaback
+  AZURE_REGION: eastus
+  # A stable but unique name is required. We include the run id to avoid collisions.
+  STATIC_WEBAPP_NAME: cortanaback-ui-1758227863
+  # If you already have a Container App that should receive the secrets, set its name
+  CONTAINER_APP_NAME: cortanaback-container
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure Azure Static Web Apps extension is available
+        run: |
+          az extension add --name staticwebapp --yes || true
+
+      - name: Create or reuse Static Web App
+        id: create_swa
+        run: |
+          set -euo pipefail
+          echo "Checking for existing Static Web App $STATIC_WEBAPP_NAME in resource group $AZURE_RESOURCE_GROUP..."
+          if az staticwebapp show --name "$STATIC_WEBAPP_NAME" --resource-group "$AZURE_RESOURCE_GROUP" >/dev/null 2>&1; then
+            echo "Static Web App already exists. Skipping create."
+          else
+            echo "Creating Static Web App $STATIC_WEBAPP_NAME..."
+            az staticwebapp create \
+              --name "$STATIC_WEBAPP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --location "$AZURE_REGION" \
+              --source . \
+              --branch main \
+              --app-artifact-location dist \
+              --sku Free
+          fi
+
+      - name: Configure Static Web App application settings (secrets)
+        run: |
+          az staticwebapp appsettings set \
+            --name "$STATIC_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --settings \
+              VITE_WEBPUBSUB_ENDPOINT="${{ secrets.VITE_WEBPUBSUB_ENDPOINT }}" \
+              VITE_WEBPUBSUB_KEY="${{ secrets.VITE_WEBPUBSUB_KEY }}" \
+              VITE_AZURE_SPEECH_KEY="${{ secrets.VITE_AZURE_SPEECH_KEY }}" \
+              VITE_AZURE_SPEECH_REGION="${{ secrets.VITE_AZURE_SPEECH_REGION }}"
+
+      - name: Deploy build artifacts (SWA CLI fallback)
+        run: |
+          # Use the Static Web Apps CLI to upload the build if needed. The 'az staticwebapp create' above
+          # will attempt to connect the repo; uploading directly is a safe fallback.
+          if command -v swa >/dev/null 2>&1; then
+            swa deploy --app-name "$STATIC_WEBAPP_NAME" --env production --source . --app-artifact-location dist || true
+          else
+            npm install -g @azure/static-web-apps-cli
+            swa deploy --app-name "$STATIC_WEBAPP_NAME" --env production --source . --app-artifact-location dist || true
+          fi
+
+      - name: Set secrets for Azure Container App
+        env:
+          VITE_WEBPUBSUB_ENDPOINT: ${{ secrets.VITE_WEBPUBSUB_ENDPOINT }}
+          VITE_WEBPUBSUB_KEY: ${{ secrets.VITE_WEBPUBSUB_KEY }}
+          VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+          VITE_AZURE_SPEECH_REGION: ${{ secrets.VITE_AZURE_SPEECH_REGION }}
+        run: |
+          set -euo pipefail
+          echo "Setting Container App secrets for $CONTAINER_APP_NAME in $AZURE_RESOURCE_GROUP..."
+          az containerapp secret set \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --secrets \
+              VITE_WEBPUBSUB_ENDPOINT="$VITE_WEBPUBSUB_ENDPOINT" \
+              VITE_WEBPUBSUB_KEY="$VITE_WEBPUBSUB_KEY" \
+              VITE_AZURE_SPEECH_KEY="$VITE_AZURE_SPEECH_KEY" \
+              VITE_AZURE_SPEECH_REGION="$VITE_AZURE_SPEECH_REGION"
+
+      - name: Patch Container App to reference secrets as environment variables
+        run: |
+          set -euo pipefail
+          echo "Updating $CONTAINER_APP_NAME container env to reference secrets..."
+          # Build JSON array for env that references secrets by name (valueFrom.secretRef)
+          ENV_JSON=$(cat <<'JSON'
+          [
+            { "name": "VITE_WEBPUBSUB_ENDPOINT", "secretRef": "VITE_WEBPUBSUB_ENDPOINT" },
+            { "name": "VITE_WEBPUBSUB_KEY",     "secretRef": "VITE_WEBPUBSUB_KEY" },
+            { "name": "VITE_AZURE_SPEECH_KEY", "secretRef": "VITE_AZURE_SPEECH_KEY" },
+            { "name": "VITE_AZURE_SPEECH_REGION","secretRef": "VITE_AZURE_SPEECH_REGION" }
+          ]
+          JSON
+
+          # Use 
+          az containerapp update \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --set "template.containers[0].env=$ENV_JSON"
+
+      - name: Finalize & print endpoints
+        run: |
+          echo "Static Web App name: $STATIC_WEBAPP_NAME"
+          echo "Resource Group: $AZURE_RESOURCE_GROUP"
+          echo "Container App: $CONTAINER_APP_NAME"
+          echo "Static Web App URL (if created):"
+          az staticwebapp show --name "$STATIC_WEBAPP_NAME" --resource-group "$AZURE_RESOURCE_GROUP" --query defaultHostname -o tsv || true
+
+
+# NOTES
+# - Required GitHub secrets (Repository > Settings > Secrets & variables > Actions):
+#   - AZURE_CREDENTIALS: Service Principal JSON (from `az ad sp create-for-rbac --sdk-auth`)
+#   - VITE_WEBPUBSUB_ENDPOINT: Web PubSub endpoint/connection string
+#  	- VITE_WEBPUBSUB_KEY: Web PubSub key (if you use connection string style, set endpoint and key appropriately)
+#   - VITE_AZURE_SPEECH_KEY: Azure Speech resource key
+#   - VITE_AZURE_SPEECH_REGION: Azure Speech resource region
+# - Optionally set CONTAINER_APP_NAME as a repository secret if you want to avoid hardcoding it in the workflow.
+# - The workflow tries to create a Static Web App if it doesn't exist. Creating resources requires
+#   that the service principal has appropriate rights on the subscription / resource group.
