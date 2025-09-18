@@ -992,13 +992,13 @@ export default function VoiceChatSimple() {
         <div className="text-center space-y-3 max-w-md flex flex-col items-center justify-center">
           {isRecording ? (
             <div className="flex items-center justify-center gap-3">
-              <Waveform size={32} className="text-cyan-400 animate-pulse" />
-              <span className="text-2xl font-light text-cyan-400">Listening...</span>
+              <Waveform size={32} className="text-green-400 animate-pulse" />
+              <span className="text-2xl font-light text-green-400">Listening...</span>
             </div>
           ) : (isProcessing || isTranscribing) ? (
             <div className="flex items-center justify-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
-              <span className="text-xl font-light text-cyan-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
+              <span className="text-xl font-light text-green-400">
                 {isTranscribing ? 'Processing...' : 'Thinking...'}
               </span>
             </div>

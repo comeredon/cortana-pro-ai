@@ -82,7 +82,7 @@ export default function ConversationHistory() {
   return (
     <div className="space-y-6">
       {/* Search and Filter Controls */}
-      <div className="bg-gray-900/50 backdrop-blur-sm border border-cyan-400/20 rounded-lg p-6 mb-8">
+      <div className="bg-gray-900/50 backdrop-blur-sm border border-green-400/20 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <MagnifyingGlass 
@@ -93,14 +93,14 @@ export default function ConversationHistory() {
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-black/50 border-cyan-400/30 text-white placeholder-gray-400"
+              className="pl-10 bg-black/50 border-green-400/30 text-white placeholder-gray-400"
             />
           </div>
           <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-auto bg-black/50 border-cyan-400/30 text-white"
+            className="w-auto bg-black/50 border-green-400/30 text-white"
           />
           <Button 
             variant="destructive" 
@@ -123,10 +123,10 @@ export default function ConversationHistory() {
       {/* Messages List */}
       <div className="space-y-6 pb-8">
           {Object.keys(messageGroups).length === 0 ? (
-            <div className="bg-gray-900/30 border border-cyan-400/20 rounded-lg p-12 text-center">
+            <div className="bg-gray-900/30 border border-green-400/20 rounded-lg p-12 text-center">
               <div className="text-gray-400 space-y-4">
                 <div className="text-6xl mb-6">🎙️</div>
-                <h3 className="text-xl font-light text-cyan-400">
+                <h3 className="text-xl font-light text-green-400">
                   {searchTerm || selectedDate ? 
                     'No messages found' :
                     'No conversations yet'
@@ -134,7 +134,7 @@ export default function ConversationHistory() {
                 </h3>
                 {!searchTerm && !selectedDate && (
                   <div className="space-y-2 text-sm max-w-md mx-auto">
-                    <p>Click the glowing blue halo on the main screen to start talking with Cortana</p>
+                    <p>Click the glowing green halo on the main screen to start talking with Cortana</p>
                     <p className="text-xs text-gray-500">All your voice transcripts and AI responses will appear here with full session memory</p>
                   </div>
                 )}
@@ -162,7 +162,7 @@ export default function ConversationHistory() {
                           className={`${
                             message.sender === 'user' 
                               ? 'ml-12 mr-4 bg-blue-500/10 border-blue-400/30' 
-                              : 'mr-12 ml-4 bg-cyan-500/10 border-cyan-400/30'
+                              : 'mr-12 ml-4 bg-green-500/10 border-green-400/30'
                           } border rounded-lg transition-all duration-200 hover:border-opacity-50 backdrop-blur-sm`}
                         >
                           <div className="p-6">
@@ -194,7 +194,7 @@ export default function ConversationHistory() {
                                     </Badge>
                                   )}
                                   {!message.isAudio && !message.id?.startsWith('broadcast-') && message.sender === 'user' && (
-                                    <Badge variant="outline" className="text-xs bg-cyan-500/20 text-cyan-400">
+                                    <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400">
                                       📝 STT
                                     </Badge>
                                   )}
