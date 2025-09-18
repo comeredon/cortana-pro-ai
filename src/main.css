@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* Base dark theme variables */
+:root {
+  --radius: 0.5rem;
+  --background: 2 8 23;
+  --foreground: 226 232 240;
+  --card: 15 23 42;
+  --card-foreground: 226 232 240;
+  --popover: 2 8 23;
+  --popover-foreground: 226 232 240;
+  --primary: 59 130 246;
+  --primary-foreground: 248 250 252;
+  --secondary: 30 41 59;
+  --secondary-foreground: 226 232 240;
+  --muted: 30 41 59;
+  --muted-foreground: 148 163 184;
+  --accent: 101 153 255;
+  --accent-foreground: 248 250 252;
+  --destructive: 239 68 68;
+  --destructive-foreground: 248 250 252;
+  --border: 30 41 59;
+  --input: 15 23 42;
+  --ring: 101 153 255;
+}
+
+@layer base {
+  * {
+    border-color: rgb(30 41 59);
+  }
+  
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: rgb(2 8 23);
+    color: rgb(226 232 240);
+    min-height: 100vh;
+  }
+  
+  /* Override Tailwind CSS variables for cards in popovers */
+  [data-radix-popover-content] {
+    --color-card: transparent;
+    --tw-bg-opacity: 0;
+  }
+  
+  [data-radix-popover-content] .bg-card {
+    background-color: transparent !important;
+    --tw-bg-opacity: 0 !important;
+  }
+}
+
+/* Voice button animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(101, 153, 255, 0.4),
+      0 0 40px rgba(101, 153, 255, 0.2),
+      0 0 60px rgba(101, 153, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(101, 153, 255, 0.7),
+      0 0 60px rgba(101, 153, 255, 0.4),
+      0 0 90px rgba(101, 153, 255, 0.2);
+  }
+}
+
+@keyframes recording-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 0 30px rgba(101, 153, 255, 0.8),
+      0 0 60px rgba(101, 153, 255, 0.5),
+      0 0 90px rgba(101, 153, 255, 0.3),
+      inset 0 0 20px rgba(101, 153, 255, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 50px rgba(101, 153, 255, 1),
+      0 0 100px rgba(101, 153, 255, 0.7),
+      0 0 150px rgba(101, 153, 255, 0.4),
+      inset 0 0 30px rgba(101, 153, 255, 0.3);
+  }
+}
+
+@keyframes halo-ring {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 0px rgba(101, 153, 255, 0.6),
+      0 0 20px rgba(101, 153, 255, 0.4),
+      0 0 40px rgba(101, 153, 255, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 20px rgba(101, 153, 255, 0),
+      0 0 30px rgba(101, 153, 255, 0.6),
+      0 0 60px rgba(101, 153, 255, 0.3);
+  }
+}
+
+.voice-button-idle {
+  animation: pulse-glow 3s ease-in-out infinite, halo-ring 4s ease-in-out infinite;
+  position: relative;
+}
+
+.voice-button-idle::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(101, 153, 255, 0.1) 0%, transparent 70%);
+  animation: halo-ring 6s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+.voice-button-recording {
+  animation: recording-pulse 0.8s ease-in-out infinite;
+  position: relative;
+}
+
+.voice-button-recording::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  right: -15px;
+  bottom: -15px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(101, 153, 255, 0.2) 0%, transparent 70%);
+  animation: halo-ring 1s ease-in-out infinite;
+  pointer-events: none;
+}

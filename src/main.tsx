@@ -1,0 +1,625 @@
+import { createRoot } from 'react-dom/client'
+import { ErrorBoundary } from "react-error-boundary";
+import { Toaster } from 'sonner'
+
+import App from './App.tsx'
+import { ErrorFallback } from './ErrorFallback.tsx'
+import './main.css'
+
+// Modern technological CSS styles
+const styleElement = document.createElement('style');
+styleElement.textContent = `
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000000;
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle animated background effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 200, 255, 0.05) 0%, transparent 70%);
+    animation: pulse-glow 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+  }
+
+  /* Header styling - solid background to fix transparency */
+  header {
+    background: rgba(15, 20, 25, 0.98) !important;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(56, 178, 172, 0.2);
+    position: relative;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #00c8ff 30%, #00ffff 70%, transparent);
+    animation: scan-line 3s ease-in-out infinite;
+  }
+
+  @keyframes scan-line {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+
+  /* Card and popover styling - solid background to fix double background */
+  [class*="card"], 
+  [data-radix-popper-content-wrapper], 
+  [data-state="open"][role="dialog"],
+  .card,
+  .bg-card,
+  [data-slot="card"] {
+    background: rgb(15, 23, 42) !important;
+    background-color: rgb(15, 23, 42) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgb(30, 41, 59) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 200, 255, 0.1) !important;
+  }
+  
+  /* Popover content specific styling */
+  [data-radix-popper-content-wrapper] {
+    background: rgb(2, 8, 23) !important;
+    border: 1px solid rgba(30, 41, 59, 0.5) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  /* Remove any nested backgrounds */
+  [data-radix-popper-content-wrapper] > div,
+  [role="dialog"] > div,
+  .popover-content,
+  [class*="popover"] [class*="content"] {
+    background: transparent !important;
+  }
+  
+  /* Fix main screen backgrounds */
+  .min-h-screen {
+    background: #000000 !important;
+  }
+
+  /* App container styling */
+  #root {
+    background: #000000 !important;
+    min-height: 100vh;
+  }
+
+  /* Card header and content alignment */
+  [class*="card"] [class*="header"] {
+    padding: 20px 24px 16px 24px !important;
+    border-bottom: 1px solid rgba(56, 178, 172, 0.1) !important;
+  }
+
+  [class*="card"] [class*="content"] {
+    padding: 20px 24px !important;
+  }
+
+  [class*="card"] [class*="title"] {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #e2e8f0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  /* Menu item styling - solid backgrounds */
+  [class*="select"] [class*="trigger"],
+  [class*="select"] [class*="content"],
+  [data-radix-select-content],
+  [data-radix-select-trigger] {
+    background: rgb(2, 8, 23) !important;
+    border: 1px solid rgb(30, 41, 59) !important;
+    color: rgb(226, 232, 240) !important;
+  }
+
+  [class*="select"] [class*="item"],
+  [data-radix-select-item] {
+    padding: 12px 16px !important;
+    color: rgb(226, 232, 240) !important;
+    cursor: pointer !important;
+    background: transparent !important;
+  }
+
+  [class*="select"] [class*="item"]:hover,
+  [data-radix-select-item]:hover {
+    background: rgba(59, 130, 246, 0.1) !important;
+  }
+
+  /* Label styling */
+  label {
+    color: #cbd5e0 !important;
+    font-weight: 500 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+  }
+
+  /* Input and textarea styling - proper alignment */
+  input, textarea {
+    background: rgb(2, 8, 23) !important;
+    border: 1px solid rgb(30, 41, 59) !important;
+    color: rgb(226, 232, 240) !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* Password input specific fix */
+  input[type="password"] {
+    padding-left: 44px !important; /* Account for lock icon */
+  }
+
+  /* Input icon positioning */
+  .relative svg {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10 !important;
+    color: rgb(148, 163, 184) !important;
+  }
+
+  input:focus, textarea:focus {
+    outline: none !important;
+    border-color: #00c8ff !important;
+    box-shadow: 0 0 0 2px rgba(0, 200, 255, 0.2) !important;
+  }
+
+  /* Form group spacing */
+  .space-y-4 > div, 
+  .grid > div {
+    margin-bottom: 16px !important;
+  }
+
+  .space-y-4 > div:last-child, 
+  .grid > div:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Card header and content proper backgrounds */
+  .card-header,
+  [class*="card"] [class*="header"] {
+    background: transparent !important;
+    padding: 24px !important;
+  }
+  
+  .card-content,
+  [class*="card"] [class*="content"] {
+    background: transparent !important;
+    padding: 0 24px 24px 24px !important;
+  }
+
+  /* Button styling */
+  button:not([class*="h-32"]) {
+    background: linear-gradient(135deg, #00c8ff 0%, #00ffff 100%) !important;
+    border: 1px solid rgba(0, 200, 255, 0.3) !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  button:not([class*="h-32"]):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 200, 255, 0.4) !important;
+    border-color: rgba(0, 200, 255, 0.6) !important;
+  }
+
+  /* Ghost button variants for Messages/Back buttons */
+  button[class*="ghost"] {
+    background: rgba(0, 200, 255, 0.1) !important;
+    border: 1px solid rgba(0, 200, 255, 0.3) !important;
+    color: #00c8ff !important;
+  }
+
+  button[class*="ghost"]:hover {
+    background: rgba(0, 200, 255, 0.2) !important;
+    border-color: rgba(0, 200, 255, 0.5) !important;
+    color: #00ffff !important;
+  }
+
+  /* Voice button - large hollow ring style like Cortana */
+  button[class*="h-32"] {
+    background: transparent !important;
+    border: 12px solid rgba(0, 200, 255, 0.9) !important;
+    width: 200px !important;
+    height: 200px !important;
+    border-radius: 50% !important;
+    box-shadow: 
+      0 0 60px rgba(0, 200, 255, 0.8),
+      0 0 120px rgba(0, 200, 255, 0.6),
+      0 0 180px rgba(0, 200, 255, 0.4),
+      0 0 240px rgba(0, 200, 255, 0.2),
+      inset 0 0 60px rgba(0, 200, 255, 0.3) !important;
+    position: relative !important;
+    backdrop-filter: blur(15px);
+    z-index: 10;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Multi-layer ring effect - much bigger and perfectly round */
+  button[class*="h-32"]::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: -30px;
+    right: -30px;
+    bottom: -30px;
+    border: 8px solid rgba(0, 150, 255, 0.6);
+    border-radius: 50% !important;
+    z-index: -1;
+    animation: rotate-outer-ring 6s linear infinite, ring-flash-1 3s ease-in-out infinite;
+  }
+
+  button[class*="h-32"]::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    right: -50px;
+    bottom: -50px;
+    border: 4px solid rgba(0, 100, 255, 0.4);
+    border-radius: 50% !important;
+    z-index: -2;
+    animation: rotate-outer-ring 8s linear infinite reverse, ring-flash-2 4s ease-in-out infinite;
+  }
+
+  @keyframes ring-flash-1 {
+    0%, 100% { border-color: rgba(0, 150, 255, 0.2); }
+    50% { border-color: rgba(0, 255, 255, 0.8); }
+  }
+
+  @keyframes ring-flash-2 {
+    0%, 100% { border-color: rgba(0, 100, 255, 0.1); }
+    50% { border-color: rgba(0, 200, 255, 0.6); }
+  }
+
+  @keyframes rotate-outer-ring {
+    0% { 
+      transform: rotate(0deg);
+      opacity: 0.3;
+    }
+    25% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% { 
+      transform: rotate(360deg);
+      opacity: 0.3;
+    }
+  }
+
+  /* Idle state ring flash */
+  button[class*="h-32"]:not(.bg-red-500) {
+    animation: idle-ring-flash 2s ease-in-out infinite;
+  }
+
+  @keyframes idle-ring-flash {
+    0% { 
+      border-color: rgba(0, 200, 255, 0.3);
+      transform: scale(1);
+      box-shadow: 
+        0 0 20px rgba(0, 200, 255, 0.4),
+        0 0 40px rgba(0, 200, 255, 0.2),
+        0 0 60px rgba(0, 200, 255, 0.1),
+        inset 0 0 20px rgba(0, 200, 255, 0.2);
+    }
+    25% {
+      border-color: rgba(0, 255, 255, 1);
+      transform: scale(1.02);
+      box-shadow: 
+        0 0 80px rgba(0, 255, 255, 1),
+        0 0 160px rgba(0, 200, 255, 0.8),
+        0 0 240px rgba(0, 200, 255, 0.6),
+        0 0 320px rgba(0, 200, 255, 0.4),
+        inset 0 0 80px rgba(0, 255, 255, 0.5);
+    }
+    50% {
+      border-color: rgba(0, 150, 255, 0.8);
+      transform: scale(1);
+      box-shadow: 
+        0 0 40px rgba(0, 150, 255, 0.6),
+        0 0 80px rgba(0, 150, 255, 0.4),
+        0 0 120px rgba(0, 150, 255, 0.2),
+        inset 0 0 40px rgba(0, 150, 255, 0.3);
+    }
+    75% {
+      border-color: rgba(0, 255, 255, 1);
+      transform: scale(1.02);
+      box-shadow: 
+        0 0 100px rgba(0, 255, 255, 1),
+        0 0 200px rgba(0, 200, 255, 0.8),
+        0 0 300px rgba(0, 200, 255, 0.6),
+        0 0 400px rgba(0, 200, 255, 0.4),
+        inset 0 0 100px rgba(0, 255, 255, 0.5);
+    }
+    100% { 
+      border-color: rgba(0, 200, 255, 0.3);
+      transform: scale(1);
+      box-shadow: 
+        0 0 20px rgba(0, 200, 255, 0.4),
+        0 0 40px rgba(0, 200, 255, 0.2),
+        0 0 60px rgba(0, 200, 255, 0.1),
+        inset 0 0 20px rgba(0, 200, 255, 0.2);
+    }
+  }
+
+  /* Recording state - large red ring styling */
+  button[style*="rgba(239, 68, 68"], 
+  button[class*="bg-red-500"],
+  .bg-red-500 {
+    background: transparent !important;
+    border: 12px solid rgba(239, 68, 68, 0.9) !important;
+    width: 200px !important;
+    height: 200px !important;
+    border-radius: 50% !important;
+    box-shadow: 
+      0 0 60px rgba(239, 68, 68, 0.8),
+      0 0 120px rgba(239, 68, 68, 0.6),
+      0 0 180px rgba(239, 68, 68, 0.4),
+      0 0 240px rgba(239, 68, 68, 0.2),
+      inset 0 0 60px rgba(239, 68, 68, 0.3) !important;
+    animation: pulse-recording-ring 0.8s ease-in-out infinite !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  button[class*="bg-red-500"]::before {
+    border-color: rgba(255, 100, 100, 0.6) !important;
+    animation: rotate-outer-ring 4s linear infinite !important;
+    top: -30px !important;
+    left: -30px !important;
+    right: -30px !important;
+    bottom: -30px !important;
+    border-width: 8px !important;
+    border-radius: 50% !important;
+  }
+
+  button[class*="bg-red-500"]::after {
+    border-color: rgba(255, 150, 150, 0.4) !important;
+    animation: rotate-outer-ring 6s linear infinite reverse !important;
+    top: -50px !important;
+    left: -50px !important;
+    right: -50px !important;
+    bottom: -50px !important;
+    border-width: 4px !important;
+    border-radius: 50% !important;
+  }
+
+  @keyframes pulse-recording-ring {
+    0% {
+      transform: scale(1);
+      border-color: rgba(255, 0, 0, 0.4);
+      box-shadow: 
+        0 0 20px rgba(255, 0, 0, 0.5),
+        0 0 40px rgba(255, 0, 0, 0.3),
+        0 0 60px rgba(255, 0, 0, 0.2),
+        inset 0 0 20px rgba(255, 0, 0, 0.2) !important;
+    }
+    20% {
+      transform: scale(1.08);
+      border-color: rgba(255, 255, 255, 1);
+      box-shadow: 
+        0 0 100px rgba(255, 255, 255, 1),
+        0 0 200px rgba(255, 0, 0, 1),
+        0 0 300px rgba(255, 100, 100, 0.8),
+        0 0 400px rgba(255, 0, 0, 0.6),
+        inset 0 0 100px rgba(255, 255, 255, 0.8) !important;
+    }
+    40% {
+      transform: scale(1);
+      border-color: rgba(255, 0, 0, 0.6);
+      box-shadow: 
+        0 0 40px rgba(255, 0, 0, 0.7),
+        0 0 80px rgba(255, 0, 0, 0.5),
+        0 0 120px rgba(255, 0, 0, 0.3),
+        inset 0 0 40px rgba(255, 0, 0, 0.3) !important;
+    }
+    60% {
+      transform: scale(1.05);
+      border-color: rgba(255, 100, 100, 1);
+      box-shadow: 
+        0 0 80px rgba(255, 100, 100, 1),
+        0 0 160px rgba(255, 0, 0, 0.8),
+        0 0 240px rgba(255, 0, 0, 0.6),
+        inset 0 0 80px rgba(255, 100, 100, 0.6) !important;
+    }
+    80% {
+      transform: scale(1);
+      border-color: rgba(255, 0, 0, 0.8);
+      box-shadow: 
+        0 0 50px rgba(255, 0, 0, 0.8),
+        0 0 100px rgba(255, 0, 0, 0.6),
+        0 0 150px rgba(255, 0, 0, 0.4),
+        inset 0 0 50px rgba(255, 0, 0, 0.4) !important;
+    }
+    100% {
+      transform: scale(1);
+      border-color: rgba(255, 0, 0, 0.4);
+      box-shadow: 
+        0 0 20px rgba(255, 0, 0, 0.5),
+        0 0 40px rgba(255, 0, 0, 0.3),
+        0 0 60px rgba(255, 0, 0, 0.2),
+        inset 0 0 20px rgba(255, 0, 0, 0.2) !important;
+    }
+  }
+
+  /* Avatar styling */
+  [class*="avatar"] {
+    background: linear-gradient(135deg, #00c8ff 0%, #00ffff 100%) !important;
+    border: 2px solid rgba(0, 255, 255, 0.3) !important;
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.3) !important;
+  }
+
+  /* Text styling */
+  h1, h2, h3 {
+    background: linear-gradient(45deg, #00c8ff, #00ffff, #00c8ff);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: holo-shift 3s ease-in-out infinite;
+  }
+
+  @keyframes holo-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #2d3748;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00c8ff, #00ffff);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #00ffff, #00c8ff);
+  }
+
+  /* Fix for any remaining transparency issues - keep black background */
+  .min-h-screen {
+    background: #000000 !important;
+  }
+
+  /* Ensure proper centering for voice interface */
+  .w-full.h-screen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 1 !important;
+  }
+
+  /* Ensure buttons in top corners are always clickable */
+  .absolute.top-6 {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure microphone icon is perfectly centered */
+  button[class*="h-32"] svg {
+    display: block !important;
+    margin: auto !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  
+  /* Profile menu and popover specific fixes */
+  [data-radix-popper-content-wrapper],
+  [data-radix-popover-content] {
+    background: rgb(2, 8, 23) !important;
+    border: 1px solid rgba(30, 41, 59, 0.5) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  /* Profile settings container fix */
+  .max-h-96 {
+    background: rgb(2, 8, 23) !important;
+  }
+  
+  /* Ensure no nested card backgrounds in popover */
+  [data-radix-popover-content] [class*="card"],
+  [data-radix-popover-content] .card,
+  [data-radix-popover-content] .bg-card,
+  [data-radix-popover-content] [data-slot="card"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(30, 41, 59, 0.3) !important;
+    box-shadow: none !important;
+  }
+  
+  /* ProfileSettings container background */
+  .space-y-6 {
+    background: transparent !important;
+  }
+  
+  /* Force all cards in popover content to be transparent */
+  [data-radix-popper-content-wrapper] [data-slot="card"],
+  [data-radix-popper-content-wrapper] .bg-card {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  
+  /* Ultra-specific targeting for AI Assistant Preferences card */
+  [data-radix-popover-content] div[class*="space-y-6"] > div:nth-child(2),
+  [data-radix-popover-content] .space-y-6 > div:nth-child(2) {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(30, 41, 59, 0.3) !important;
+  }
+  
+  /* Target any bg-card class specifically in popover */
+  [data-radix-popover-content] .bg-card,
+  [data-radix-popper-content-wrapper] .bg-card {
+    background-color: transparent !important;
+    --tw-bg-opacity: 0 !important;
+  }
+  
+  /* Header fixes */
+  header {
+    background: rgb(2, 8, 23) !important;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.5) !important;
+  }
+`;
+document.head.appendChild(styleElement);
+
+createRoot(document.getElementById('root')!).render(
+  <ErrorBoundary FallbackComponent={ErrorFallback}>
+    <App />
+    <Toaster position="top-right" richColors />
+   </ErrorBoundary>
+)
