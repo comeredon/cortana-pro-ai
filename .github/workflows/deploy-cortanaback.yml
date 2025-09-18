@@ -67,7 +67,7 @@ jobs:
           az staticwebapp appsettings set \
             --name "$STATIC_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
-            --settings \
+            --setting-names \
               VITE_WEBPUBSUB_ENDPOINT="${{ secrets.VITE_WEBPUBSUB_ENDPOINT }}" \
               VITE_WEBPUBSUB_KEY="${{ secrets.VITE_WEBPUBSUB_KEY }}" \
               VITE_AZURE_SPEECH_KEY="${{ secrets.VITE_AZURE_SPEECH_KEY }}" \
