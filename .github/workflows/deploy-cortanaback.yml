@@ -9,8 +9,6 @@ env:
   AZURE_REGION: eastus
   # A stable but unique name is required. We include the run id to avoid collisions.
   STATIC_WEBAPP_NAME: cortanaback-ui-1758227863
-  # If you already have a Container App that should receive the secrets, set its name
-  CONTAINER_APP_NAME: cortanaback-container
 
 jobs:
   build-and-deploy:
@@ -84,49 +82,10 @@ jobs:
             swa deploy --app-name "$STATIC_WEBAPP_NAME" --env production --source . --app-artifact-location dist || true
           fi
 
-      - name: Set secrets for Azure Container App
-        env:
-          VITE_WEBPUBSUB_ENDPOINT: ${{ secrets.VITE_WEBPUBSUB_ENDPOINT }}
-          VITE_WEBPUBSUB_KEY: ${{ secrets.VITE_WEBPUBSUB_KEY }}
-          VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
-          VITE_AZURE_SPEECH_REGION: ${{ secrets.VITE_AZURE_SPEECH_REGION }}
-        run: |
-          set -euo pipefail
-          echo "Setting Container App secrets for $CONTAINER_APP_NAME in $AZURE_RESOURCE_GROUP..."
-          az containerapp secret set \
-            --name "$CONTAINER_APP_NAME" \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --secrets \
-              VITE_WEBPUBSUB_ENDPOINT="$VITE_WEBPUBSUB_ENDPOINT" \
-              VITE_WEBPUBSUB_KEY="$VITE_WEBPUBSUB_KEY" \
-              VITE_AZURE_SPEECH_KEY="$VITE_AZURE_SPEECH_KEY" \
-              VITE_AZURE_SPEECH_REGION="$VITE_AZURE_SPEECH_REGION"
-
-      - name: Patch Container App to reference secrets as environment variables
-        run: |
-          set -euo pipefail
-          echo "Updating $CONTAINER_APP_NAME container env to reference secrets..."
-          # Build JSON array for env that references secrets by name (valueFrom.secretRef)
-          ENV_JSON=$(cat <<'JSON'
-          [
-            { "name": "VITE_WEBPUBSUB_ENDPOINT", "secretRef": "VITE_WEBPUBSUB_ENDPOINT" },
-            { "name": "VITE_WEBPUBSUB_KEY",     "secretRef": "VITE_WEBPUBSUB_KEY" },
-            { "name": "VITE_AZURE_SPEECH_KEY", "secretRef": "VITE_AZURE_SPEECH_KEY" },
-            { "name": "VITE_AZURE_SPEECH_REGION","secretRef": "VITE_AZURE_SPEECH_REGION" }
-          ]
-          JSON
-
-          # Use 
-          az containerapp update \
-            --name "$CONTAINER_APP_NAME" \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --set "template.containers[0].env=$ENV_JSON"
-
       - name: Finalize & print endpoints
         run: |
           echo "Static Web App name: $STATIC_WEBAPP_NAME"
           echo "Resource Group: $AZURE_RESOURCE_GROUP"
-          echo "Container App: $CONTAINER_APP_NAME"
           echo "Static Web App URL (if created):"
           az staticwebapp show --name "$STATIC_WEBAPP_NAME" --resource-group "$AZURE_RESOURCE_GROUP" --query defaultHostname -o tsv || true
 
